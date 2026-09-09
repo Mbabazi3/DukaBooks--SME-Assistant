@@ -1,4 +1,4 @@
- # DukaBooks SME App
+# DukaBooks SME App
 
 Nuxt 3 frontend for the DukaBooks SME invoice assistant demo.
 
