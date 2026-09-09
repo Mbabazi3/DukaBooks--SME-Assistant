@@ -1,0 +1,17 @@
+{
+  "name": "sme-app",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "build": "nuxt build",
+    "dev": "nuxt dev",
+    "generate": "nuxt generate",
+    "preview": "nuxt preview"
+  },
+  "dependencies": {
+    "nuxt": "^3.19.0"
+  },
+  "allowScripts": {
+    "esbuild@0.28.2": true
+  }
+}
