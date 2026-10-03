@@ -5,7 +5,7 @@ const FAILED = ["failed", "cancelled", "pending_credits"];
 
 export default defineEventHandler(async (event) => {
   const id = getRouterParam(event, "id")!;
-  const client = useGptClient(event);
+  const client = useGptClient();
   const doc: any = await sdk(() => client.extraction.documents.status(id));
   const status = doc.status ?? doc.attributes?.status;
 

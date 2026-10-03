@@ -1,9 +1,9 @@
 // Deals board: create a deal (Test 014A). The company goes into `properties`.
 export default defineEventHandler(async (event) => {
   const { company, ...rest } = await readBody(event);
-  const { workspaceId } = useGptConfig(event);
+  const { workspaceId } = useGptConfig();
   const deal = await sdk(() =>
-    useGptClient(event).crm.deals.create({
+    useGptClient().crm.deals.create({
       currency: "UGX",
       ...rest,
       workspace_id: workspaceId,

@@ -26,16 +26,18 @@ npx -y npm@11 run dev     # http://localhost:3000
 
 | Variable | What it is |
 |---|---|
-| `NUXT_GPT_PLATFORM_BASE_URL` | API host (default `https://api.gpt-core.com`) |
-| `NUXT_GPT_PLATFORM_API_KEY` | ISV / app server key (`sk_app_…`) |
-| `NUXT_GPT_PLATFORM_WORKSPACE_ID` | Workspace the shop lives in |
-| `NUXT_GPT_PLATFORM_AGENT_ID` | Agent the Ask AI threads are bound to |
-| `NUXT_GPT_PLATFORM_INVOICE_RESULT_ID` | Extraction result the Dashboard/Invoices query |
+| `GPT_PLATFORM_BASE_URL` | API host, e.g. `https://staging.api.gpt-core.com` |
+| `GPT_PLATFORM_APP_ID` | Your app's id (kept for reference; the SDK doesn't need it) |
+| `GPT_PLATFORM_APP_KEY` | App key; used only if the server key is empty |
+| `GPT_PLATFORM_APP_SERVER_KEY` | Server key the backend uses for every SDK call |
+| `GPT_PLATFORM_WORKSPACE_ID` | Workspace the shop lives in (`ws_duka_001`) |
+| `GPT_PLATFORM_AGENT_ID` | Optional: agent the Ask AI threads are bound to |
+| `GPT_PLATFORM_INVOICE_RESULT_ID` | Optional: extraction result the Dashboard/Invoices query |
 
 Without credentials the app starts, but every `/api` route returns
 `503 GPT Platform is not configured`.
 
-Other commands: `npm run build`, `npm run preview`.
+Production: `npm run build` then `npm start` (loads `.env` with `node --env-file`).
 
 ## Screens
 
@@ -63,9 +65,9 @@ dukabooks-app/
 ├── composables/useSmeApi.js  browser → /api adapter
 ├── assets/css/main.css
 ├── server/
-│   ├── utils/gpt.ts        GptClient, config, SDK error mapping
+│   ├── utils/gpt.ts        GptClient, env config, SDK error mapping
 │   ├── utils/shape.ts      small response shapers
 │   └── api/                one route per operation
-├── nuxt.config.ts          runtimeConfig.gptPlatform (server-only)
+├── nuxt.config.ts
 └── .env.example
 ```

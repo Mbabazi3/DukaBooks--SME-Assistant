@@ -2,7 +2,7 @@
 export default defineEventHandler(async (event) => {
   const { title, startIso, endIso, serviceId } = await readBody(event);
   return sdk(() =>
-    useGptClient(event).scheduling.events.create({
+    useGptClient().scheduling.events.create({
       title,
       start_time: startIso,
       end_time: endIso,

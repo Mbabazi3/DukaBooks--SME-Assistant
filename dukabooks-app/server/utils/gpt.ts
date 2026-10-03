@@ -1,29 +1,58 @@
 import { GptClient, GptCoreError } from "@gpt-platform/client";
 
 // The ONLY place the app talks to GPT Platform. Runs in Nitro (server side),
-// so the API key never reaches the browser bundle.
+// so the keys never reach the browser bundle.
 //
-// Config comes from runtimeConfig.gptPlatform (see nuxt.config.ts), which Nuxt
-// fills from NUXT_GPT_PLATFORM_* environment variables — copy .env.example to
-// .env and fill it in.
+// Settings come from environment variables. `nuxt dev` loads dukabooks-app/.env
+// automatically; for a production build run `npm start` (node --env-file=.env).
+// See .env.example for the full list.
+
+export interface GptConfig {
+  baseUrl: string;
+  apiKey: string;
+  appId: string;
+  workspaceId: string;
+  agentId: string;
+  invoiceResultId: string;
+}
+
+export function useGptConfig(): GptConfig {
+  const env = process.env;
+  return {
+    baseUrl: env.GPT_PLATFORM_BASE_URL || "https://api.gpt-core.com",
+    // Server-to-server calls use the app's server key; the plain app key is a fallback.
+    apiKey: env.GPT_PLATFORM_APP_SERVER_KEY || env.GPT_PLATFORM_APP_KEY || "",
+    appId: env.GPT_PLATFORM_APP_ID || "",
+    workspaceId: env.GPT_PLATFORM_WORKSPACE_ID || "",
+    agentId: env.GPT_PLATFORM_AGENT_ID || "",
+    invoiceResultId: env.GPT_PLATFORM_INVOICE_RESULT_ID || "",
+  };
+}
+
+// Throws a clear 503 naming the env var when an optional setting is needed but missing.
+export function requireSetting(value: string, envName: string, feature: string): string {
+  if (!value) {
+    throw createError({
+      statusCode: 503,
+      statusMessage: `${feature} is not configured`,
+      message: `Set ${envName} in dukabooks-app/.env`,
+    });
+  }
+  return value;
+}
 
 let client: GptClient | null = null;
 
-export function useGptConfig(event?: Parameters<typeof useRuntimeConfig>[0]) {
-  return useRuntimeConfig(event).gptPlatform;
-}
-
-export function useGptClient(event?: Parameters<typeof useRuntimeConfig>[0]): GptClient {
+export function useGptClient(): GptClient {
   if (client) return client;
-  const { baseUrl, apiKey } = useGptConfig(event);
-  if (!apiKey) {
-    throw createError({
-      statusCode: 503,
-      statusMessage: "GPT Platform is not configured",
-      message: "Set NUXT_GPT_PLATFORM_API_KEY (and NUXT_GPT_PLATFORM_WORKSPACE_ID) in dukabooks-app/.env",
-    });
-  }
-  client = new GptClient({ baseUrl, apiKey });
+  const { baseUrl, apiKey, workspaceId } = useGptConfig();
+  requireSetting(apiKey, "GPT_PLATFORM_APP_SERVER_KEY", "GPT Platform");
+  client = new GptClient({
+    baseUrl,
+    apiKey,
+    workspaceId: workspaceId || undefined,
+    appInfo: { name: "DukaBooks", version: "0.1.0" },
+  });
   return client;
 }
 

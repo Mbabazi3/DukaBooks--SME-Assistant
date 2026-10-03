@@ -1,5 +1,5 @@
 // Appointments: bookable service types.
 export default defineEventHandler(async (event) => {
-  const { workspaceId } = useGptConfig(event);
-  return sdk(() => useGptClient(event).scheduling.eventTypes.list(workspaceId));
+  const { workspaceId } = useGptConfig();
+  return sdk(() => useGptClient().scheduling.eventTypes.list(workspaceId));
 });

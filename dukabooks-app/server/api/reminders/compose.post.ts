@@ -3,7 +3,7 @@ export default defineEventHandler(async (event) => {
   const { customer, intent, amount } = await readBody(event);
   const what = intent === "payment_due" ? "payment reminder" : "order update";
   const draft: any = await sdk(() =>
-    useGptClient(event).email.outboundEmails.composeWithAi({
+    useGptClient().email.outboundEmails.composeWithAi({
       to: [customer?.email ?? ""],
       prompt: `Write a short, friendly ${what} for a small-business customer. Sign as DukaBooks Hardware.`,
       context: { intent, amount },

@@ -1,5 +1,5 @@
 // Reminders: sent-email log (Test 018C).
 export default defineEventHandler(async (event) => {
-  const { workspaceId } = useGptConfig(event);
-  return sdk(() => useGptClient(event).email.outboundEmails.listByWorkspace(workspaceId));
+  const { workspaceId } = useGptConfig();
+  return sdk(() => useGptClient().email.outboundEmails.listByWorkspace(workspaceId));
 });

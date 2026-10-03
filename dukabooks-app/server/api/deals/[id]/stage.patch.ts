@@ -2,6 +2,6 @@
 export default defineEventHandler(async (event) => {
   const id = getRouterParam(event, "id")!;
   const { stage_id } = await readBody(event);
-  const deal = await sdk(() => useGptClient(event).crm.deals.moveStage(id, { stage_id } as any));
+  const deal = await sdk(() => useGptClient().crm.deals.moveStage(id, { stage_id } as any));
   return withCompany(deal);
 });

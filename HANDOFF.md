@@ -29,7 +29,7 @@ Scan (upload lifecycle) · Ask AI (streaming chat).
 
 - **Browser never sees the key.** Pages call `composables/useSmeApi.js`, which
   calls the app's own `/api/*` routes. Those Nitro routes call `GptClient`
-  via `server/utils/gpt.ts` (config from `NUXT_GPT_PLATFORM_*` env vars).
+  via `server/utils/gpt.ts` (config from `GPT_PLATFORM_*` vars in `dukabooks-app/.env`).
 - The in-browser `mockClient` was removed; the app runs on the real SDK only.
   Without credentials, `/api/*` returns `503 GPT Platform is not configured`.
 - Offline proof of each call stays in `sdk-contract-tests/`.

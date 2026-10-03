@@ -3,7 +3,7 @@
 export default defineEventHandler(async (event) => {
   const threadId = getRouterParam(event, "id")!;
   const { content } = await readBody(event);
-  const client = useGptClient(event);
+  const client = useGptClient();
   const iterator = await sdk(() => client.threads.messages.stream(threadId, { content }));
 
   const encoder = new TextEncoder();

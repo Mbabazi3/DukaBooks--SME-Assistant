@@ -1,8 +1,8 @@
 // Dashboard + Invoices: server-side row filtering over extracted invoices (Test 010).
 export default defineEventHandler(async (event) => {
   const { field = "total", op = "gt", value = 0 } = getQuery(event);
-  const { invoiceResultId } = useGptConfig(event);
-  const client = useGptClient(event);
+  const invoiceResultId = requireSetting(useGptConfig().invoiceResultId, "GPT_PLATFORM_INVOICE_RESULT_ID", "Invoice data");
+  const client = useGptClient();
   return sdk(() =>
     client.extraction.results.query(invoiceResultId, {
       filters: [{ field: String(field), op: String(op), value: Number(value) }],
