@@ -39,6 +39,11 @@ unwraps responses. No live API key required.
 | 019B | `scheduling.events.create({ start_time, end_time, title })` | `POST /scheduling/events` | **No workspace_id in the body** — platform infers from auth |
 | 019C | `scheduling.events.listByDateRange(ws, start, end)` | `GET /scheduling/events/by_date_range` | workspace_id + times as **query params**; day-view friendly |
 | 019D | `scheduling.events.complete(id)` | `PATCH /scheduling/events/:id/complete` | **Another PATCH** (like email send); `cancel` follows same pattern |
+| 020A | `reviews.queues.summaries()` | `GET /review-queues/summaries` | Per-queue pending + SLA-overdue counts (human-in-loop for low-confidence extractions) |
+| 020B | `reviews.reviews.list({ pageSize })` | `GET /reviews?size=20` | Open review items. **Note the nesting:** item methods live on `client.reviews.reviews`, not `client.reviews` |
+| 020C | `reviews.reviews.claim(id)` | `PATCH /reviews/:id/claim` | Reviewer takes ownership |
+| 020D | `reviews.reviews.correct(id, { ... })` | `PATCH /reviews/:id/correct` | Human fixes an extracted value |
+| 020E | `reviews.reviews.approve(id, { decision_payload })` | `PATCH /reviews/:id/approve` | Human confirms the AI value |
 
 ## Key type contracts (from dist/*.d.ts)
 
@@ -85,8 +90,10 @@ Answer      agents / threads namespaces  ← next to test
 - `test-crm2.mjs` — Tests 015/016 (pipelines, stages, contact promote, activities)
 - `test-phase3.mjs` — Tests 017/018 (catalog products, AI-composed reminders, send)
 - `test-phase4.mjs` — Test 019 (event types, events, date-range day view, complete)
+- `test-reviews.mjs` — Test 020 (review queues, claim/correct/approve)
 - `test-blank-response.mjs` — silent-`undefined` demo (finding #1)
-- `russ-sdk-demo.mjs` — self-contained 14-check harness for the SDK author
+- `test-sdk-demo.mjs` — self-contained 14-check harness for the SDK author (`npm run test:demo`)
+- `run-all.mjs` — runs every `test-*.mjs` and prints PASS/FAIL (`npm test`)
 
 ### Mock-writing gotcha
 
@@ -97,6 +104,6 @@ reading it twice throws `Body is unusable: Body has already been read`
 
 ## Next steps
 
-1. Test the AI answer step (threads/agents) to close the RAG loop.
+1. ~~Test the AI answer step (threads/agents)~~ — done, tests 011/012.
 2. Get real ISV credentials from Russ → re-run the suite against the live API.
-3. Scaffold the Nuxt frontend for the SME document assistant.
+3. ~~Scaffold the Nuxt frontend~~ — done, see `../dukabooks-app/`.

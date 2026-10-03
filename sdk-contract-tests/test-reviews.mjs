@@ -107,17 +107,17 @@ console.log("\n=== SDK RESPONSE ===");
 console.dir(summaries, { depth: null });
 
 console.log("\n########## TEST 020B: reviews.list ##########");
-const open = await client.reviews.list({ pageSize: 20 });
+const open = await client.reviews.reviews.list({ pageSize: 20 });
 console.log("\n=== SDK RESPONSE ===");
 console.dir(open, { depth: null });
 
 console.log("\n########## TEST 020C: reviews.claim ##########");
-const claimed = await client.reviews.claim("rev_test_001");
+const claimed = await client.reviews.reviews.claim("rev_test_001");
 console.log("\n=== SDK RESPONSE ===");
 console.dir(claimed, { depth: null });
 
 console.log("\n########## TEST 020D: reviews.correct (human fixes the value) ##########");
-const corrected = await client.reviews.correct("rev_test_001", {
+const corrected = await client.reviews.reviews.correct("rev_test_001", {
   correction_payload: { total: 2050000 },
   notes: "Actual total on paper is UGX 2,050,000"
 });
@@ -125,7 +125,7 @@ console.log("\n=== SDK RESPONSE ===");
 console.dir(corrected, { depth: null });
 
 console.log("\n########## TEST 020E: reviews.approve (AI was right) ##########");
-const approved = await client.reviews.approve("rev_test_002", {
+const approved = await client.reviews.reviews.approve("rev_test_002", {
   decision_payload: { verdict: "ai_was_right" }
 });
 console.log("\n=== SDK RESPONSE ===");

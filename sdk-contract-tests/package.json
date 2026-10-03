@@ -1,0 +1,15 @@
+{
+  "name": "sdk-contract-tests",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Offline request/response contract tests for @gpt-platform/client (mock fetch, no API key)",
+  "type": "module",
+  "scripts": {
+    "test": "node run-all.mjs",
+    "test:demo": "node test-sdk-demo.mjs"
+  },
+  "dependencies": {
+    "@gpt-platform/client": "^1.2.0"
+  },
+  "license": "ISC"
+}
