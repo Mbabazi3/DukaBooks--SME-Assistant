@@ -4,18 +4,19 @@ Assignment (from Russ): test the GPT Platform SDKs offline, understand the
 platform deeply, and have something to show Jonathan. Vehicle: **DukaBooks**,
 an SME business app for a Ugandan shop owner, built on `@gpt-platform/client`
 v1.2.0. Strategy confirmed by Russ: mocks that follow SDK patterns → simple
-cutover when ISV credentials arrive.
+cutover when ISV credentials arrive. Status: cutover done in code — the app's
+backend now calls the real SDK; it needs ISV credentials in `.env` to run.
 
 ## Folder map (`~/ai-coding/gpt-platform-sdk-lab/`)
 
 | Path | What it is |
 |---|---|
-| `TEST-NOTES.md` | Master test log: 24 verified calls, endpoints, findings |
-| `BACKEND-NEEDS.md` | App→backend contract per screen + cutover plan + live smoke order |
-| `test-*.mjs` | Offline mock suite: 008–018 series (extraction, search, threads/agents, CRM, catalog, email) |
-| `test-blank-response.mjs` | Demo of finding #1 (silent undefined) |
-| `russ-sdk-demo.mjs` | Self-contained 14-check harness for Russ (runs offline, PASS/FAIL) |
-| `sme-app/` | Nuxt 3 app (8 screens). Dev: `npx -y npm@11 run dev` → localhost:3000 |
+| `sdk-contract-tests/` | Offline SDK tests (`npm test` runs them all) |
+| `sdk-contract-tests/TEST-NOTES.md` | Master test log: verified calls, endpoints, findings |
+| `sdk-contract-tests/test-sdk-demo.mjs` | Self-contained 14-check harness for Russ (PASS/FAIL) |
+| `sdk-contract-tests/test-blank-response.mjs` | Demo of finding #1 (silent undefined) |
+| `dukabooks-app/` | Nuxt 3 app: frontend `pages/` + backend `server/api/` on the real SDK |
+| `dukabooks-app/BACKEND-NEEDS.md` | Screen → route → SDK contract, questions for Russ, live smoke order |
 
 ## The app (all screens verified rendering)
 
@@ -26,12 +27,12 @@ Scan (upload lifecycle) · Ask AI (streaming chat).
 
 ## Architecture that matters
 
-- `sme-app/composables/useSmeApi.js` = **the seam**. `mockClient` mirrors the
-  real GptClient surface 1:1 (namespaces, method names, params, returns),
-  stateful. `useSmeApi()` is a thin adapter pages call.
-- **Cutover = one line**: `const client = mockClient` → `new GptClient({ baseUrl, apiKey })`.
-- Mock behaviours are backed by real offline tests against the actual SDK —
-  not guesses.
+- **Browser never sees the key.** Pages call `composables/useSmeApi.js`, which
+  calls the app's own `/api/*` routes. Those Nitro routes call `GptClient`
+  via `server/utils/gpt.ts` (config from `NUXT_GPT_PLATFORM_*` env vars).
+- The in-browser `mockClient` was removed; the app runs on the real SDK only.
+  Without credentials, `/api/*` returns `503 GPT Platform is not configured`.
+- Offline proof of each call stays in `sdk-contract-tests/`.
 
 ## SDK findings (for Russ — message drafted, not yet sent)
 
@@ -55,7 +56,7 @@ Scan (upload lifecycle) · Ask AI (streaming chat).
 ## Blocked / pending
 
 - ⬜ ISV credentials from Russ (account + API key + sandbox workspace + baseUrl confirm)
-- ⬜ Send Russ: the drafted message + `russ-sdk-demo.mjs` + TEST-NOTES.md
+- ⬜ Send Russ: the drafted message + `sdk-contract-tests/test-sdk-demo.mjs` + TEST-NOTES.md
 - ⬜ Live smoke test (order in BACKEND-NEEDS.md): auth → contacts list → upload
   path → results.query → threads stream
 
@@ -65,5 +66,6 @@ Scan (upload lifecycle) · Ask AI (streaming chat).
   `support` tickets, `reviews` (human-in-loop for low-confidence extractions)
 - **Phase 5 — Depth**: `memory`/knowledge graph, `voice`, `connectors`,
   `channels`/`events` (WebSocket refresh), `billing` (credits display)
-- Pattern for each new module: inspect d.ts → offline test (next number) →
-  mockClient method → thin adapter → page → verify → docs.
+- Pattern for each new module: inspect d.ts → offline test in
+  `sdk-contract-tests/` (next number) → `server/api` route → `useSmeApi` method →
+  page → verify → docs.
