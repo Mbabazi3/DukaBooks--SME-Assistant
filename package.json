@@ -1,15 +1,12 @@
 {
-  "name": "gpt-platform-sdk-test",
-  "version": "1.0.0",
-  "description": "",
-  "main": "index.js",
+  "name": "gpt-platform-sdk-lab",
+  "private": true,
+  "description": "GPT Platform SDK lab: offline contract tests + the DukaBooks app built on the SDK",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "install:all": "npm --prefix sdk-contract-tests install && npm --prefix dukabooks-app install",
+    "test": "npm --prefix sdk-contract-tests test",
+    "dev": "npm --prefix dukabooks-app run dev",
+    "build": "npm --prefix dukabooks-app run build"
   },
-  "keywords": [],
-  "author": "",
-  "license": "ISC",
-  "dependencies": {
-    "@gpt-platform/client": "^1.2.0"
-  }
+  "license": "ISC"
 }

@@ -1,0 +1,20 @@
+{
+  "name": "dukabooks-app",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "build": "nuxt build",
+    "dev": "nuxt dev",
+    "generate": "nuxt generate",
+    "preview": "nuxt preview",
+    "start": "node --env-file=.env .output/server/index.mjs"
+  },
+  "dependencies": {
+    "@gpt-platform/client": "^1.2.0",
+    "nuxt": "^3.19.0"
+  },
+  "allowScripts": {
+    "esbuild@0.28.2": true
+  },
+  "description": "DukaBooks SME assistant: Nuxt frontend + Nitro backend on the GPT Platform SDK"
+}

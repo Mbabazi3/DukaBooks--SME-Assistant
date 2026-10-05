@@ -1,74 +1,30 @@
-# GPT Platform SDK Tests and DukaBooks SME Demo
+# GPT Platform SDK Lab
 
-This repository is primarily an offline test lab for the `@gpt-platform/client`
-SDK. It also contains DukaBooks, a Nuxt 3 frontend that demonstrates how an
-SME invoice assistant can use the tested SDK capabilities.
+Two ways of testing [`@gpt-platform/client`](https://www.npmjs.com/package/@gpt-platform/client):
 
-## Repository Contents
+| Folder | What it is | Needs credentials? |
+|---|---|---|
+| [`sdk-contract-tests/`](sdk-contract-tests/) | Offline Vitest suite: a fake platform checks every request the SDK builds and how it unwraps responses | No |
+| [`dukabooks-app/`](dukabooks-app/) | DukaBooks, a Nuxt 3 SME app. Frontend in `pages/`, backend in `server/api/` calling the real SDK | Yes |
 
-- `test-*.mjs` - Offline SDK request and response contract tests
-- `TEST-NOTES.md` - Verified SDK behavior, endpoint shapes, and findings
-- `BACKEND-NEEDS.md` - Backend integration contract for the SME app
-- `HANDOFF.md` - Project status and implementation handoff notes
-- `sme-app/` - Nuxt 3 DukaBooks frontend demo
+The contract tests prove each SDK call in isolation; the app proves the calls
+work together as a product.
 
-## Requirements
-
-- Node.js 18 or newer
-- npm
-
-## Install SDK Test Dependencies
-
-From the repository root:
+## Quick start
 
 ```bash
-npx -y npm@11 install
+npm run install:all       # installs both folders (use `npx -y npm@11` if local npm misbehaves)
+npm test                  # run all SDK contract tests
+# put your GPT Platform settings in dukabooks-app/.env (see dukabooks-app/README.md)
+npm run dev               # DukaBooks on http://localhost:3000
 ```
 
-## Run SDK Tests
+## Docs
 
-The test files use local mock fetch handlers, so they do not require an API key
-or live network access.
-
-Run an individual test:
-
-```bash
-node test-threads-agents.mjs
-```
-
-Run all root test files:
-
-```bash
-for file in test-*.mjs; do node "$file" || exit 1; done
-```
-
-The root `package.json` does not yet define an automated test runner. See
-`TEST-NOTES.md` for the purpose and result of each test file.
-
-## Run the DukaBooks Frontend
-
-The frontend has its own dependencies and package scripts:
-
-```bash
-cd sme-app
-npx -y npm@11 install
-npx -y npm@11 run dev
-```
-
-Open [http://localhost:3000](http://localhost:3000).
-
-The frontend currently uses a stateful in-memory mock client. It does not
-require GPT Platform credentials, and data is not persisted to a database.
-Frontend-specific commands and routes are documented in
-[`sme-app/Readme.md`](sme-app/Readme.md).
-
-## Production Integration
-
-The planned production architecture keeps the GPT Platform API key in Nuxt
-Nitro server routes. The browser calls application routes, and those routes
-use `GptClient` server-side. See `BACKEND-NEEDS.md` for the integration
-contract, open backend questions, and live smoke-test order.
+- [`sdk-contract-tests/TEST-NOTES.md`](sdk-contract-tests/TEST-NOTES.md): every verified call, endpoint shapes, SDK findings
+- [`dukabooks-app/BACKEND-NEEDS.md`](dukabooks-app/BACKEND-NEEDS.md): what each screen needs, route → SDK map, questions for the platform team
+- [`HANDOFF.md`](HANDOFF.md): project status and next phases
 
 ## License
 
-No license has been selected for this project yet.
+No license has been selected yet.
