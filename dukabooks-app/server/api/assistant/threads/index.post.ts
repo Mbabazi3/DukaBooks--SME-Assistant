@@ -1,7 +1,8 @@
-// Ask AI: open a chat thread bound to our agent (Test 011A).
+// Ask AI: open a chat thread bound to the DukaBooks agent (Test 011A).
 export default defineEventHandler(async (event) => {
-  const { title = "SME Invoice Assistant" } = await readBody(event);
-  const { agentId } = useGptConfig();
-  // agent_id is optional: without GPT_PLATFORM_AGENT_ID the thread uses the platform default.
-  return sdk(() => useGptClient().threads.create({ title, ...(agentId && { agent_id: agentId }) } as any));
+  const { title = "SME Invoice Assistant" } = (await readBody(event)) ?? {};
+  const agent_id = await ensureAgentId();
+  const thread: any = await sdk(() => useGptClient().threads.create({ title, agent_id }));
+  const invoices = await loadInvoices().catch(() => []);
+  return { id: thread.id, agent_id, invoice_count: invoices.length };
 });

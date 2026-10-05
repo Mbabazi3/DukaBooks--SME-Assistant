@@ -101,6 +101,11 @@ describe.skipIf(skipReason)(`GPT Platform live (${live.baseUrl})`, () => {
   it("5. sent emails log", async (ctx) => {
     needsWorkspace(ctx);
     isList(await call("emails list", () => client.email.outboundEmails.listByWorkspace(WS)));
+    const senders: any[] = await call("sender profiles", () => client.email.senderProfiles.listByWorkspace(WS));
+    isList(senders);
+    console.info(
+      `email sender profiles: ${senders.map((p) => `${p.email}${p.is_default ? " (default)" : ""}${p.dns_validated ? "" : " (DNS not validated)"} → ${p.id}`).join(", ") || "none — composeWithAi/send may need one"}`
+    );
   });
 
   it("6. scheduling: event types and this week's events", async (ctx) => {
@@ -118,10 +123,10 @@ describe.skipIf(skipReason)(`GPT Platform live (${live.baseUrl})`, () => {
     isList(docs);
     console.info(`documents: ${docs.length}`);
     const done = docs.find((d) => d.status === "completed" || d.status === "partial");
-    if (!done) return console.info("no processed documents yet — upload one to get a GPT_PLATFORM_INVOICE_RESULT_ID");
+    if (!done) return console.info("no processed documents yet — scan one in the app (Scan page)");
     const results: any[] = await call("results by document", () => client.extraction.results.byDocument(done.id));
     isList(results);
-    console.info(`document ${done.id} → result ids: ${results.map((r) => r.id).join(", ")} (candidate GPT_PLATFORM_INVOICE_RESULT_ID)`);
+    console.info(`document ${done.id} → result ids: ${results.map((r) => r.id).join(", ")}`);
   });
 
   it("8. search", async (ctx) => {

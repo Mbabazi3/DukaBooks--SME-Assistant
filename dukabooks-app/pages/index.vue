@@ -1,12 +1,13 @@
 <script setup>
 const api = useSmeApi();
 
-// SDK (server side): client.extraction.results.query(invoiceResultId, { filters: [], limit: 100, offset: 0 })
-const { data: all } = await useAsyncData("all-invoices", () => api.resultsQuery({}));
+// SDK (server side): documents.listByWorkspace → results.byDocument per processed document
+const { data: all, error: invoicesError } = await useAsyncData("all-invoices", () => api.resultsQuery({}));
 
-// SDK (server side): client.crm.contacts.listByWorkspace("ws_...") + client.crm.deals.listByWorkspace("ws_...")
-const { data: customers } = await useAsyncData("dash-customers", () => api.listCustomers());
-const { data: deals } = await useAsyncData("dash-deals", () => api.listDeals());
+// SDK (server side): crm.contacts / crm.deals .listByWorkspace — may be 403 until CRM is enabled
+const { data: customers, error: customersError } = await useAsyncData("dash-customers", () => api.listCustomers());
+const { data: deals, error: dealsError } = await useAsyncData("dash-deals", () => api.listDeals());
+const crmOff = computed(() => isNotEnabled(customersError.value) || isNotEnabled(dealsError.value));
 
 const stats = computed(() => {
   const rows = all.value?.rows ?? [];
@@ -43,11 +44,12 @@ const stats = computed(() => {
       </div>
       <div class="stat">
         <div class="label">Customers</div>
-        <div class="value">{{ stats.customers }}</div>
+        <div class="value">{{ crmOff ? "—" : stats.customers }}</div>
       </div>
       <div class="stat">
         <div class="label">Open deals</div>
-        <div class="value">{{ stats.activeDeals }} <span class="muted" style="font-size:.8rem;font-weight:400">worth {{ api.formatUGX(stats.pipelineValue) }}</span></div>
+        <div v-if="crmOff" class="value muted" style="font-size:.9rem">CRM not enabled yet</div>
+        <div v-else class="value">{{ stats.activeDeals }} <span class="muted" style="font-size:.8rem;font-weight:400">worth {{ api.formatUGX(stats.pipelineValue) }}</span></div>
       </div>
     </div>
 
@@ -59,10 +61,16 @@ const stats = computed(() => {
           <tr><th>Invoice</th><th>Supplier</th><th>Date</th><th style="text-align:right">Total</th></tr>
         </thead>
         <tbody>
-          <tr v-for="r in (all?.rows ?? []).slice(-5).reverse()" :key="r.invoice_number">
-            <td class="mono">{{ r.invoice_number }}</td>
-            <td>{{ r.supplier }}</td>
-            <td>{{ r.invoice_date }}</td>
+          <tr v-if="invoicesError">
+            <td colspan="4" class="muted">Couldn't load invoices: {{ errorMessage(invoicesError) }}</td>
+          </tr>
+          <tr v-else-if="!(all?.rows ?? []).length">
+            <td colspan="4" class="muted">No invoices yet — <NuxtLink to="/upload">scan your first one</NuxtLink>.</td>
+          </tr>
+          <tr v-for="r in (all?.rows ?? []).slice(-5).reverse()" :key="r.document_id">
+            <td class="mono">{{ r.invoice_number || "—" }}</td>
+            <td>{{ r.supplier || "—" }}</td>
+            <td>{{ r.invoice_date || "—" }}</td>
             <td class="num">{{ api.formatUGX(r.total) }}</td>
           </tr>
         </tbody>

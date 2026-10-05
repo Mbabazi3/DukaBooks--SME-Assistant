@@ -64,7 +64,7 @@ td.num { text-align: right; font-variant-numeric: tabular-nums; font-weight: 600
 .btn:disabled { opacity: 0.5; cursor: not-allowed; }
 .btn.ghost { background: transparent; color: var(--brand); border: 1px solid var(--brand); }
 
-input[type="number"], input[type="text"] {
+input[type="number"], input[type="text"], input[type="email"] {
   padding: 9px 12px; border: 1px solid var(--line); border-radius: 8px; font-size: 0.95rem; width: 100%;
 }
 

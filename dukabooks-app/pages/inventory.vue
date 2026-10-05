@@ -1,14 +1,15 @@
 <script setup>
 const api = useSmeApi();
+const { pageError, guard } = usePageErrors();
 
 // SDK (server side): client.catalog.products.list("ws_...") → GET /catalog/products/workspace/:ws (Test 017B)
-const { data: products, refresh } = await useAsyncData("products", () => api.listProducts());
+const { data: products, refresh, error: productsErr } = await useAsyncData("products", () => api.listProducts());
 
 const form = ref({ name: "", sku: "", base_price: null });
 const saving = ref(false);
 const showForm = ref(false);
 
-async function addProduct() {
+const addProduct = guard(async () => {
   if (!form.value.name || !form.value.base_price) return;
   saving.value = true;
   // SDK (server side): client.catalog.products.create(...) → POST /catalog/products (Test 017A)
@@ -22,7 +23,7 @@ async function addProduct() {
   await refresh();
   saving.value = false;
   showForm.value = false;
-}
+}, saving);
 </script>
 
 <template>
@@ -32,6 +33,8 @@ async function addProduct() {
       What you sell, from the platform catalog
       <span class="mono">(catalog.products, verified Test 017)</span>.
     </p>
+
+    <FeatureNotice feature="Catalog (products)" :errors="[productsErr, pageError]" />
 
     <div class="card">
       <h2>Products <span class="muted">({{ products?.length ?? 0 }})</span></h2>
