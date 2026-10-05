@@ -20,9 +20,11 @@ Requires Node.js 18+.
 ```bash
 cd dukabooks-app
 npx -y npm@11 install
-cp .env.example .env      # then fill in your GPT Platform values
+# create .env with the settings below
 npx -y npm@11 run dev     # http://localhost:3000
 ```
+
+Create `dukabooks-app/.env` (git ignores it) with:
 
 | Variable | What it is |
 |---|---|
@@ -30,7 +32,7 @@ npx -y npm@11 run dev     # http://localhost:3000
 | `GPT_PLATFORM_APP_ID` | Your app's id (kept for reference; the SDK doesn't need it) |
 | `GPT_PLATFORM_APP_KEY` | App key; used only if the server key is empty |
 | `GPT_PLATFORM_APP_SERVER_KEY` | Server key the backend uses for every SDK call |
-| `GPT_PLATFORM_WORKSPACE_ID` | Workspace the shop lives in (`ws_duka_001`) |
+| `GPT_PLATFORM_WORKSPACE_ID` | Workspace UUID the shop lives in (`npm run test:live` in `sdk-contract-tests/` lists them) |
 | `GPT_PLATFORM_AGENT_ID` | Optional: agent the Ask AI threads are bound to |
 | `GPT_PLATFORM_INVOICE_RESULT_ID` | Optional: extraction result the Dashboard/Invoices query |
 
@@ -69,5 +71,5 @@ dukabooks-app/
 │   ├── utils/shape.ts      small response shapers
 │   └── api/                one route per operation
 ├── nuxt.config.ts
-└── .env.example
+└── .env                    your settings (not committed)
 ```

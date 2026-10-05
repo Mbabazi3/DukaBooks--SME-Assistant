@@ -11,10 +11,9 @@ backend now calls the real SDK; it needs ISV credentials in `.env` to run.
 
 | Path | What it is |
 |---|---|
-| `sdk-contract-tests/` | Offline SDK tests (`npm test` runs them all) |
+| `sdk-contract-tests/` | Offline Vitest suite for the SDK (`npm test`) |
 | `sdk-contract-tests/TEST-NOTES.md` | Master test log: verified calls, endpoints, findings |
-| `sdk-contract-tests/test-sdk-demo.mjs` | Self-contained 14-check harness for Russ (PASS/FAIL) |
-| `sdk-contract-tests/test-blank-response.mjs` | Demo of finding #1 (silent undefined) |
+| `sdk-contract-tests/tests/sdk-findings.test.ts` | Repros of findings #1 and #2 for Russ |
 | `dukabooks-app/` | Nuxt 3 app: frontend `pages/` + backend `server/api/` on the real SDK |
 | `dukabooks-app/BACKEND-NEEDS.md` | Screen → route → SDK contract, questions for Russ, live smoke order |
 
@@ -56,7 +55,7 @@ Scan (upload lifecycle) · Ask AI (streaming chat).
 ## Blocked / pending
 
 - ⬜ ISV credentials from Russ (account + API key + sandbox workspace + baseUrl confirm)
-- ⬜ Send Russ: the drafted message + `sdk-contract-tests/test-sdk-demo.mjs` + TEST-NOTES.md
+- ⬜ Send Russ: the drafted message + `sdk-contract-tests/tests/sdk-findings.test.ts` + TEST-NOTES.md
 - ⬜ Live smoke test (order in BACKEND-NEEDS.md): auth → contacts list → upload
   path → results.query → threads stream
 
@@ -66,6 +65,6 @@ Scan (upload lifecycle) · Ask AI (streaming chat).
   `support` tickets, `reviews` (human-in-loop for low-confidence extractions)
 - **Phase 5 — Depth**: `memory`/knowledge graph, `voice`, `connectors`,
   `channels`/`events` (WebSocket refresh), `billing` (credits display)
-- Pattern for each new module: inspect d.ts → offline test in
-  `sdk-contract-tests/` (next number) → `server/api` route → `useSmeApi` method →
+- Pattern for each new module: inspect d.ts → Vitest test in
+  `sdk-contract-tests/tests/` (next number) → `server/api` route → `useSmeApi` method →
   page → verify → docs.

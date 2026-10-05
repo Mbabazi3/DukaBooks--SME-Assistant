@@ -2,14 +2,21 @@
   "name": "sdk-contract-tests",
   "version": "1.0.0",
   "private": true,
-  "description": "Offline request/response contract tests for @gpt-platform/client (mock fetch, no API key)",
+  "description": "Offline contract tests for @gpt-platform/client (Vitest, mock fetch, no API key)",
   "type": "module",
   "scripts": {
-    "test": "node run-all.mjs",
-    "test:demo": "node test-sdk-demo.mjs"
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "test:live": "vitest run --config vitest.live.config.ts",
+    "typecheck": "tsc -p ."
   },
   "dependencies": {
     "@gpt-platform/client": "^1.2.0"
   },
-  "license": "ISC"
+  "license": "ISC",
+  "devDependencies": {
+    "@types/node": "^26.6.4",
+    "typescript": "^7.0.2",
+    "vitest": "^3.2.7"
+  }
 }

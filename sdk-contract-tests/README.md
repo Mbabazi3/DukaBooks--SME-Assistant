@@ -1,47 +1,74 @@
 # SDK Contract Tests
 
-Offline request/response contract tests for
-[`@gpt-platform/client`](https://www.npmjs.com/package/@gpt-platform/client).
+Offline contract tests for
+[`@gpt-platform/client`](https://www.npmjs.com/package/@gpt-platform/client),
+written with [Vitest](https://vitest.dev).
 
-Each `test-*.mjs` passes a mock `fetch` into `new GptClient({ fetch })`, so it
-checks the exact HTTP request the SDK builds (method, path, JSON:API body,
-headers) and how it unwraps the response. No API key or network is needed.
+Each test gives the SDK a fake platform (`support/mock-platform.ts`) instead of
+the network, then asserts the exact request it sends (method, path, query,
+JSON:API body, headers) and the shape it returns. No API key or network needed.
 
 ## Run
 
 ```bash
 cd sdk-contract-tests
 npx -y npm@11 install
-npm test                 # every test file, PASS/FAIL summary
-npm test -- crm          # only files whose name contains "crm"
-npm test -- --verbose    # include each test's request/response log
-npm run test:demo        # the 14-check harness for the SDK author
-node test-phase4.mjs     # any single file
+npm test                      # run everything once
+npm run test:watch            # re-run on save
+npx vitest run tests/crm      # one file
+npx vitest run -t "014B"      # one test by name
+npm run typecheck
+npm run test:live             # read-only checks against the REAL platform (see below)
 ```
 
-## Files
+## Live tests (real platform, real credentials)
 
-| File | Covers |
-|---|---|
-| `test-client.mjs` | 008C extraction results by document |
-| `test-search.mjs` | 009 full-text + semantic search |
-| `test-results-query.mjs` | 010 server-side row filtering |
-| `test-threads-agents.mjs` | 011/012 threads, streaming, agents |
-| `test-crm.mjs` | 013/014 companies, contacts, deals, moveStage |
-| `test-crm2.mjs` | 015/016 pipelines, stages, promote, activities |
-| `test-phase3.mjs` | 017/018 catalog, AI-composed email, send |
-| `test-phase4.mjs` | 019 scheduling |
-| `test-reviews.mjs` | 020 review queues (human-in-the-loop) |
-| `test-blank-response.mjs` | Finding #1: silent `undefined` |
-| `test-sdk-demo.mjs` | Self-contained 14-check harness |
-| `run-all.mjs` | Test runner |
+`npm test` never touches the network — its key (`sk_app_contract_test`) is a
+dummy on purpose. `npm run test:live` runs `live/*.live.test.ts` against the
+real platform with the SDK:
 
-Results, endpoint shapes and SDK findings are logged in
-[`TEST-NOTES.md`](TEST-NOTES.md).
+- Credentials come from `../dukabooks-app/.env` (or the file in
+  `GPT_PLATFORM_ENV_FILE`). Nothing secret is stored in this folder.
+- **Read-only:** the client's fetch blocks every non-GET request before it is
+  sent, so nothing in the workspace is created, changed or deleted.
+- Skipped with a message if the settings are missing.
+- It prints useful ids, e.g. candidate `GPT_PLATFORM_INVOICE_RESULT_ID` and
+  `GPT_PLATFORM_AGENT_ID` values for the app.
 
-## Adding a test
+In VS Code, install the **Vitest** extension (`vitest.explorer`) to see each
+test in the Testing panel with run/debug buttons.
 
-Inspect the namespace in `node_modules/@gpt-platform/client/dist/index.d.ts`,
-copy an existing file, take the next test number, and add a row to
-`TEST-NOTES.md`. Wrap every mock response in `{ data: … }` (JSON:API), and read
-`request.text()` only once.
+## Layout
+
+```text
+sdk-contract-tests/
+├── support/mock-platform.ts   fake platform: records requests, returns JSON:API
+├── tests/*.test.ts            offline: one file per SDK area (see TEST-NOTES.md)
+├── live/                      live read-only checks against the real platform
+├── vitest.config.ts           offline suite (npm test)
+├── vitest.live.config.ts      live suite (npm run test:live)
+└── TEST-NOTES.md              verified calls, endpoint shapes, SDK findings
+```
+
+## Writing a test
+
+```ts
+import { expect, it } from "vitest";
+import { mockPlatform, resource } from "../support/mock-platform";
+
+it("014B moveStage() is a PATCH with stage_id in the attributes", async () => {
+  const platform = mockPlatform({
+    "PATCH /crm/deals/deal_1/move-stage": () => resource("deal_1", "crm-deal", { pipeline_stage_id: "won" }),
+  });
+
+  const deal = await platform.client.crm.deals.moveStage("deal_1", { stage_id: "won" });
+
+  expect(platform.last.body).toEqual({ data: { type: "crm-deal", id: "deal_1", attributes: { stage_id: "won" } } });
+  expect(deal.pipeline_stage_id).toBe("won");
+});
+```
+
+- Handlers are keyed `"METHOD /path"`; returning plain data wraps it in `{ data }`.
+- `platform.last` / `platform.requests` hold what the SDK sent.
+- Unmocked routes get a JSON:API 404, so a wrong path fails loudly.
+- Take the next test number and add a row to `TEST-NOTES.md`.

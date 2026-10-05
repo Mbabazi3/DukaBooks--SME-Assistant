@@ -4,7 +4,7 @@ Two ways of testing [`@gpt-platform/client`](https://www.npmjs.com/package/@gpt-
 
 | Folder | What it is | Needs credentials? |
 |---|---|---|
-| [`sdk-contract-tests/`](sdk-contract-tests/) | Offline `.mjs` tests: a mock `fetch` checks every request the SDK builds and how it unwraps responses | No |
+| [`sdk-contract-tests/`](sdk-contract-tests/) | Offline Vitest suite: a fake platform checks every request the SDK builds and how it unwraps responses | No |
 | [`dukabooks-app/`](dukabooks-app/) | DukaBooks, a Nuxt 3 SME app. Frontend in `pages/`, backend in `server/api/` calling the real SDK | Yes |
 
 The contract tests prove each SDK call in isolation; the app proves the calls
@@ -15,7 +15,7 @@ work together as a product.
 ```bash
 npm run install:all       # installs both folders (use `npx -y npm@11` if local npm misbehaves)
 npm test                  # run all SDK contract tests
-cp dukabooks-app/.env.example dukabooks-app/.env   # fill in GPT Platform values
+# put your GPT Platform settings in dukabooks-app/.env (see dukabooks-app/README.md)
 npm run dev               # DukaBooks on http://localhost:3000
 ```
 

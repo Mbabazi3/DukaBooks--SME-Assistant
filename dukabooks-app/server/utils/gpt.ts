@@ -41,16 +41,29 @@ export function requireSetting(value: string, envName: string, feature: string):
   return value;
 }
 
+const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+
 let client: GptClient | null = null;
 
 export function useGptClient(): GptClient {
   if (client) return client;
   const { baseUrl, apiKey, workspaceId } = useGptConfig();
   requireSetting(apiKey, "GPT_PLATFORM_APP_SERVER_KEY", "GPT Platform");
+  requireSetting(workspaceId, "GPT_PLATFORM_WORKSPACE_ID", "GPT Platform workspace");
+  // Platform ids are UUIDs; a placeholder like "ws_duka_001" makes every call fail with 400.
+  if (!UUID.test(workspaceId)) {
+    throw createError({
+      statusCode: 503,
+      statusMessage: "GPT_PLATFORM_WORKSPACE_ID is not a workspace UUID",
+      message: `"${workspaceId}" is not a workspace id. Run \`npm run test:live\` in sdk-contract-tests/ to list yours.`,
+    });
+  }
+  // No `workspaceId` in the constructor: the SDK would add ?workspace_id= to
+  // every request, and staging rejects requests that also carry the workspace
+  // in the path ("conflict path and query params"). Routes pass it per call.
   client = new GptClient({
     baseUrl,
     apiKey,
-    workspaceId: workspaceId || undefined,
     appInfo: { name: "DukaBooks", version: "0.1.0" },
   });
   return client;

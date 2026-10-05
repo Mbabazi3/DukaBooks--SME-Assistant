@@ -1,6 +1,6 @@
 # GPT Platform SDK — Test Notes (Client SDK v1.2.0)
 
-Local mock-fetch testing of `@gpt-platform/client`. Each test intercepts the
+Local mock-fetch testing of `@gpt-platform/client` with Vitest. Each test intercepts the
 network layer to verify the exact HTTP requests the SDK generates and how it
 unwraps responses. No live API key required.
 
@@ -82,18 +82,59 @@ Answer      agents / threads namespaces  ← next to test
 
 ## Test files
 
-- `test-client.mjs` — Test 008C (extraction results by document)
-- `test-search.mjs` — Test 009A/009B (full-text + semantic search)
-- `test-results-query.mjs` — Test 010A/010B (server-side row filtering)
-- `test-threads-agents.mjs` — Tests 011/012 (chat threads, streaming, agents)
-- `test-crm.mjs` — Tests 013/014 (companies, contacts list, deals, moveStage)
-- `test-crm2.mjs` — Tests 015/016 (pipelines, stages, contact promote, activities)
-- `test-phase3.mjs` — Tests 017/018 (catalog products, AI-composed reminders, send)
-- `test-phase4.mjs` — Test 019 (event types, events, date-range day view, complete)
-- `test-reviews.mjs` — Test 020 (review queues, claim/correct/approve)
-- `test-blank-response.mjs` — silent-`undefined` demo (finding #1)
-- `test-sdk-demo.mjs` — self-contained 14-check harness for the SDK author (`npm run test:demo`)
-- `run-all.mjs` — runs every `test-*.mjs` and prints PASS/FAIL (`npm test`)
+Vitest suites in `tests/` (run `npm test`); the fake platform is `support/mock-platform.ts`.
+
+| File | Tests |
+|---|---|
+| `tests/client.test.ts` | 001 + shared request shape (JSON:API body, Idempotency-Key, User-Agent, versioned Accept, `x-application-key`) |
+| `tests/extraction.test.ts` | 008B upload lifecycle, `status()`, 008C `byDocument`, 010A/B server-side `query` |
+| `tests/search.test.ts` | 009A full-text, 009B semantic |
+| `tests/threads-agents.test.ts` | 011A–C threads + streaming, 012A–B agents |
+| `tests/crm.test.ts` | 008A, 013–016 contacts, companies, deals, pipelines, activities |
+| `tests/catalog-email.test.ts` | 017 catalog (incl. `update`), 018 AI-composed email |
+| `tests/scheduling.test.ts` | 019 event types (incl. `list`), events (incl. `cancel`) |
+| `tests/reviews.test.ts` | 020 review queues, claim/correct/approve |
+| `tests/sdk-findings.test.ts` | Findings #1 and #2 (replaces the old 14-check demo harness) |
+
+Every test asserts the exact method, path, query and body the SDK sends, and
+the shape it returns — a change in SDK behaviour fails the test.
+
+### Live checks
+
+`live/staging.live.test.ts` (`npm run test:live`) runs read-only list calls
+against the real platform using `dukabooks-app/.env`: contacts (auth check),
+deals/pipelines/stages, activities, products, emails, event types + events,
+extraction documents → results, search, review queues, agents. Non-GET
+requests are blocked in the client's fetch.
+
+### Staging findings (live runs, 2026-10-05)
+
+- Workspace ids are UUIDs. The old `ws_duka_001` is a mock id → `400 invalid_argument`.
+- `new GptClient({ workspaceId })` appends `?workspace_id=` to EVERY request.
+  Staging rejects a request that also has the workspace in the path
+  (`/crm/contacts/workspace/:id`) with `400 invalid_query "conflict path and
+  query params"`. So: don't set `workspaceId` on the client when calling
+  path-scoped methods; pass the id per call.
+- `reviews.queues.summaries()` is typed `ReviewQueueSummary[]` but returns `{ items: [...] }`.
+- `search.query()` returns `500` even with a valid workspace
+  (request `GNufCqnh-iuFO6AAG2PD`) — report to Russ.
+- `platform.applications.readCurrent()` returned no name/id with the server key.
+- With the correct workspace (run 3): email log, extraction documents, review
+  queues and agents **work**; CRM (contacts, deals, activities), catalog and
+  scheduling return `403 forbidden` — the key is valid but lacks those
+  permissions (requests `GNufRcWrCmRS7PQAG2ij`, `GNufRga07SxS7PQAG2kD`,
+  `GNufRi4PQo5S7PQAPJAh`). Search still `500` (`GNufRpNOkLAGRZgAG2kj`).
+
+### Other observations (not reported)
+
+- `threads.messages.send()` wraps content in `data.attributes` and adds
+  `metadata.context` (timezone, locale, local time) by itself, but
+  `threads.messages.stream()` puts `content` directly under `data`.
+- `extraction.results.query()` sends a bare `{ filters, limit, offset }` body,
+  not a JSON:API envelope.
+- A 500 is retried (default retry config) before the error is thrown.
+- SDK v2.0.0 moves the API version to `2026-09-17`; the rest of this suite
+  passes unchanged against v2.0.0.
 
 ### Mock-writing gotcha
 

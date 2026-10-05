@@ -96,7 +96,7 @@ Nuxt page
 | `GET / POST /api/appointments` | `scheduling.events.listByDateRange` / `create` |
 | `PATCH /api/appointments/:id/complete\|cancel` | `scheduling.events.complete` / `cancel` |
 
-Configuration (`.env`, see `.env.example`): `GPT_PLATFORM_BASE_URL`,
+Configuration (`dukabooks-app/.env`, not committed): `GPT_PLATFORM_BASE_URL`,
 `GPT_PLATFORM_APP_ID`, `GPT_PLATFORM_APP_KEY`, `GPT_PLATFORM_APP_SERVER_KEY`
 (used for the SDK calls), `GPT_PLATFORM_WORKSPACE_ID`, and optionally
 `GPT_PLATFORM_AGENT_ID` and `GPT_PLATFORM_INVOICE_RESULT_ID`. Without a key
