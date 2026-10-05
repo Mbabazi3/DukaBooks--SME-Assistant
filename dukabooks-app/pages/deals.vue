@@ -1,11 +1,12 @@
 <script setup>
 const api = useSmeApi();
+const { pageError, guard } = usePageErrors();
 
-const { data: deals, refresh } = await useAsyncData("deals", () => api.listDeals());
+const { data: deals, refresh, error: dealsErr } = await useAsyncData("deals", () => api.listDeals());
 
 // Board columns come from the platform pipeline, not hard-coded.
 // SDK (server side): pipelines.listByWorkspace → pipelineStages.listByPipeline (Test 015)
-const { data: stages } = await useAsyncData("stages", () => api.listPipelineStages());
+const { data: stages, error: stagesErr } = await useAsyncData("stages", () => api.listPipelineStages());
 const stageList = computed(() => stages.value ?? []);
 const showForm = ref(false);
 const form = ref({ name: "", amount: null, company: "" });
@@ -20,16 +21,16 @@ function nextStage(currentId) {
   return stageList.value[i + 1].id;
 }
 
-async function move(dealId, stageId) {
+const move = guard(async (dealId, stageId) => {
   moving.value = dealId;
   // SDK (server side): client.crm.deals.moveStage(dealId, { stage_id: stageId })
   //   → PATCH /crm/deals/:id/move-stage (Test 014B)
   await api.moveDealStage(dealId, stageId);
   await refresh();
   moving.value = null;
-}
+}, moving);
 
-async function addDeal() {
+const addDeal = guard(async () => {
   if (!form.value.name || !form.value.amount) return;
   saving.value = true;
   // SDK (server side): client.crm.deals.create(...) → POST /crm/deals (Test 014A)
@@ -42,7 +43,7 @@ async function addDeal() {
   await refresh();
   saving.value = false;
   showForm.value = false;
-}
+}, saving);
 </script>
 
 <template>
@@ -55,6 +56,8 @@ async function addDeal() {
       Money you are chasing, moved through stages with
       <span class="mono">deals.moveStage</span> (verified Test 014).
     </p>
+
+    <FeatureNotice feature="CRM (deals & pipelines)" :errors="[dealsErr, stagesErr, pageError]" />
 
     <div class="chips" style="margin-top:12px">
       <button class="chip btn-chip" @click="showForm = !showForm">

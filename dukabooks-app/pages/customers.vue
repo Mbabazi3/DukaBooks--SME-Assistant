@@ -1,8 +1,9 @@
 <script setup>
 const api = useSmeApi();
+const { pageError, guard } = usePageErrors();
 
-const { data: customers, refresh } = await useAsyncData("customers", () => api.listCustomers());
-const { data: activities, refresh: refreshActivities } = await useAsyncData("activities", () => api.listActivities());
+const { data: customers, refresh, error: customersErr } = await useAsyncData("customers", () => api.listCustomers());
+const { data: activities, refresh: refreshActivities, error: activitiesErr } = await useAsyncData("activities", () => api.listActivities());
 
 const form = ref({ first_name: "", last_name: "", phone: "", email: "" });
 const saving = ref(false);
@@ -12,7 +13,7 @@ const noteForm = ref({ subject: "", body: "" });
 const savingNote = ref(false);
 const showNoteForm = ref(false);
 
-async function addCustomer() {
+const addCustomer = guard(async () => {
   if (!form.value.first_name || !form.value.phone) return;
   saving.value = true;
   // SDK (server side): client.crm.contacts.create(...) → POST /crm/contacts (Test 008A)
@@ -21,18 +22,18 @@ async function addCustomer() {
   await refresh();
   saving.value = false;
   showForm.value = false;
-}
+}, saving);
 
-async function promote(c) {
+const promote = guard(async (c) => {
   promoting.value = c.id;
   // SDK (server side): client.crm.contacts.update(c.id, { lifecycle_stage: "customer" })
   //   → PATCH /crm/contacts/:id (Test 016A)
   await api.updateCustomerStage(c.id, "customer");
   await refresh();
   promoting.value = null;
-}
+}, promoting);
 
-async function addNote() {
+const addNote = guard(async () => {
   if (!noteForm.value.subject) return;
   savingNote.value = true;
   // SDK (server side): client.crm.activities.create({ type: "note", subject, body })
@@ -42,7 +43,7 @@ async function addNote() {
   await refreshActivities();
   savingNote.value = false;
   showNoteForm.value = false;
-}
+}, savingNote);
 
 const stageLabel = {
   lead: "Lead",
@@ -64,6 +65,8 @@ const typeIcon = { note: "📝", call: "📞", meeting: "🤝", email: "✉️" 
       Everyone you do business with — kept in the platform CRM
       <span class="mono">(crm.contacts, verified Tests 008/013)</span>.
     </p>
+
+    <FeatureNotice feature="CRM (customers & follow-ups)" :errors="[customersErr, activitiesErr, pageError]" />
 
     <div class="card">
       <h2>Your people <span class="muted">({{ customers?.length ?? 0 }})</span></h2>

@@ -26,24 +26,30 @@ export const useSmeApi = () => ({
   resultsQuery: ({ field = "total", op = "gt", value = 0 } = {}) =>
     api("/invoices", { query: { field, op, value } }),
 
-  // Scan flow
+  // Scan flow — every step goes through our server (server/api/uploads/).
   beginUpload: (file) =>
-    api("/uploads", { method: "POST", body: { filename: file.name, content_type: file.type || "application/pdf" } }),
-  // The file goes straight from the browser to storage via the presigned URL —
-  // it never passes through our server.
-  putToPresignedUrl: (uploadUrl, file) =>
-    fetch(uploadUrl, { method: "PUT", body: file, headers: { "Content-Type": file.type || "application/octet-stream" } })
-      .then((r) => { if (!r.ok) throw new Error(`Upload failed (${r.status})`); return true; }),
+    api("/uploads", {
+      method: "POST",
+      body: { filename: file.name, content_type: file.type || "application/pdf", size: file.size },
+    }),
+  // The server forwards the file to the presigned storage URL.
+  putToPresignedUrl: (docId, file) =>
+    api(`/uploads/${docId}/file`, {
+      method: "PUT",
+      body: file,
+      headers: { "Content-Type": file.type || "application/octet-stream" },
+    }),
   finishUpload: (docId) => api(`/uploads/${docId}/finish`, { method: "PATCH" }),
-  async waitForProcessed(docId, { intervalMs = 2000, timeoutMs = 120000 } = {}) {
+  async waitForProcessed(docId, { intervalMs = 2000, timeoutMs = 180000, onStatus } = {}) {
     const until = Date.now() + timeoutMs;
     while (Date.now() < until) {
       const doc = await api(`/uploads/${docId}`);
-      if (doc.failed) throw new Error(`Extraction ${doc.status}`);
+      onStatus?.(doc);
+      if (doc.failed) throw new Error(`Extraction ${doc.status}${doc.error ? `: ${doc.error}` : ""}`);
       if (doc.done) return doc;
       await sleep(intervalMs);
     }
-    throw new Error("Timed out waiting for the document to be processed");
+    throw new Error("Still processing after 3 minutes — check back on the Invoices page");
   },
 
   // Ask AI (threads + streaming)
@@ -106,6 +112,7 @@ export const useSmeApi = () => ({
   createProduct: (attrs) => api("/products", { method: "POST", body: attrs }),
 
   // Reminders (email)
+  // customer: { name, email, id? } — id only when picked from CRM.
   composeReminder: ({ customer, intent, amount }) =>
     api("/reminders/compose", { method: "POST", body: { customer, intent, amount } }),
   sendReminder: (draft) => api(`/reminders/${draft.id}/send`, { method: "POST" }),
@@ -119,3 +126,29 @@ export const useSmeApi = () => ({
   completeAppointment: (id) => api(`/appointments/${id}/complete`, { method: "PATCH" }),
   cancelAppointment: (id) => api(`/appointments/${id}/cancel`, { method: "PATCH" }),
 });
+
+/** Turns a $fetch error into a short message for the page. */
+export const errorMessage = (err) =>
+  err?.data?.message || err?.data?.statusMessage || err?.statusMessage || err?.message || "Something went wrong";
+
+/** True when the platform refused a feature for this key (HTTP 403). */
+export const isNotEnabled = (err) => (err?.statusCode ?? err?.status ?? err?.data?.statusCode) === 403;
+
+/**
+ * Page-level error handling for actions (add, move, book…).
+ * `guard(fn, ...busyRefs)` runs fn; on failure it records the error in
+ * `pageError` and resets the busy flags so buttons don't stay stuck.
+ */
+export const usePageErrors = () => {
+  const pageError = ref(null);
+  const guard = (fn, ...busy) => async (...args) => {
+    pageError.value = null;
+    try {
+      return await fn(...args);
+    } catch (err) {
+      pageError.value = err;
+      for (const r of busy) r.value = typeof r.value === "boolean" ? false : null;
+    }
+  };
+  return { pageError, guard };
+};

@@ -6,16 +6,24 @@ const input = ref("");
 const busy = ref(false);
 const thread = ref(null);
 
+const setupError = ref(null);
+
 onMounted(async () => {
-  // → POST /api/assistant/threads → client.threads.create({ title, agent_id }) (Test 011A)
-  thread.value = await api.threadsCreate("SME Invoice Assistant");
-  messages.value.push({
-    role: "assistant",
-    content:
-      "Hello! I can answer questions about your extracted invoices — for example " +
-      "\"Which supplier invoices are above UGX 2 million?\"",
-    sources: []
-  });
+  // → POST /api/assistant/threads: finds or creates the DukaBooks agent, then
+  //   client.threads.create({ title, agent_id }) (Test 011A)
+  try {
+    thread.value = await api.threadsCreate("SME Invoice Assistant");
+    const n = thread.value.invoice_count ?? 0;
+    messages.value.push({
+      role: "assistant",
+      content: n
+        ? `Hello! I can see ${n} extracted invoice${n === 1 ? "" : "s"}. Ask me anything — for example "Which supplier invoices are above UGX 2 million?"`
+        : "Hello! I don't see any extracted invoices yet — scan one on the Scan page, then ask me about it.",
+      sources: []
+    });
+  } catch (err) {
+    setupError.value = errorMessage(err);
+  }
 });
 
 const suggestions = [
@@ -65,6 +73,8 @@ async function send(text) {
       </button>
     </div>
 
+    <p v-if="setupError" class="card" style="color:#b91c1c">Couldn't start the assistant: {{ setupError }}</p>
+
     <div class="chat">
       <div v-for="(m, i) in messages" :key="i" class="bubble" :class="m.role">
         {{ m.content }}<span v-if="m.streaming" class="muted"> ▌</span>
@@ -81,7 +91,7 @@ async function send(text) {
         placeholder="Ask about your invoices…"
         @keyup.enter="send()"
       />
-      <button class="btn" :disabled="busy" @click="send()">Send</button>
+      <button class="btn" :disabled="busy || !thread" @click="send()">Send</button>
     </div>
   </div>
 </template>

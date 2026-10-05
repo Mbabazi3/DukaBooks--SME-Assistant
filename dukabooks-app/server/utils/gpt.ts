@@ -13,7 +13,6 @@ export interface GptConfig {
   appId: string;
   workspaceId: string;
   agentId: string;
-  invoiceResultId: string;
 }
 
 export function useGptConfig(): GptConfig {
@@ -25,7 +24,6 @@ export function useGptConfig(): GptConfig {
     appId: env.GPT_PLATFORM_APP_ID || "",
     workspaceId: env.GPT_PLATFORM_WORKSPACE_ID || "",
     agentId: env.GPT_PLATFORM_AGENT_ID || "",
-    invoiceResultId: env.GPT_PLATFORM_INVOICE_RESULT_ID || "",
   };
 }
 
@@ -81,12 +79,27 @@ export async function sdk<T>(fn: () => Promise<T>): Promise<T> {
     return result;
   } catch (err) {
     if (err instanceof GptCoreError) {
+      const detail = platformDetail(err.body);
       throw createError({
         statusCode: err.statusCode ?? 502,
         statusMessage: `${err.name}: ${err.message}`,
-        data: { code: err.code, requestId: err.requestId },
+        message: detail ? `${err.message} — ${detail}` : err.message,
+        data: { code: err.code, requestId: err.requestId, detail },
       });
     }
     throw err;
   }
+}
+
+/** The platform's own explanation from a JSON:API error body, e.g. "file_size_bytes: is invalid". */
+export function platformDetail(body: unknown): string {
+  let parsed: any = body;
+  if (typeof body === "string") {
+    try { parsed = JSON.parse(body); } catch { return body.slice(0, 300); }
+  }
+  const errors: any[] = parsed?.errors ?? [];
+  return errors
+    .map((e) => [e.source?.pointer?.split("/").pop() ?? e.source?.parameter, e.detail ?? e.title].filter(Boolean).join(": "))
+    .filter(Boolean)
+    .join("; ");
 }

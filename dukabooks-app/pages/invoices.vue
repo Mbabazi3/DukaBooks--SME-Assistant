@@ -4,11 +4,9 @@ const threshold = ref(0);
 const applied = ref(0);
 const loading = ref(false);
 
-// SDK (server side): client.extraction.results.query(invoiceResultId, {
-//   filters: [{ field: "total", op: "gt", value: applied }], limit: 100, offset: 0
-// })
-// The filtering runs on the SERVER — the app never downloads rows it won't show.
-const { data, refresh } = await useAsyncData(
+// SDK (server side): documents.listByWorkspace → results.byDocument, filtered on
+// our server (GET /api/invoices?field=total&op=gt&value=…) — the browser only gets matches.
+const { data, refresh, error } = await useAsyncData(
   "filtered-invoices",
   () => api.resultsQuery({ field: "total", op: "gt", value: applied.value }),
   { watch: [applied] }
@@ -30,8 +28,8 @@ async function apply() {
     <div class="card">
       <h2>Filter</h2>
       <p class="sub">
-        "Show invoices with a total above…" — runs server-side via
-        <span class="mono">results.query</span> (verified in Test 010).
+        "Show invoices with a total above…" — filtered on the server from your
+        extracted documents.
       </p>
       <div class="chat-input">
         <input type="number" v-model.number="threshold" min="0" step="100000" />
@@ -47,14 +45,20 @@ async function apply() {
           <tr><th>Invoice</th><th>Supplier</th><th>Date</th><th style="text-align:right">Total</th></tr>
         </thead>
         <tbody>
-          <tr v-for="r in data?.rows ?? []" :key="r.invoice_number">
-            <td class="mono">{{ r.invoice_number }}</td>
-            <td>{{ r.supplier }}</td>
-            <td>{{ r.invoice_date }}</td>
+          <tr v-if="error">
+            <td colspan="4" class="muted">Couldn't load invoices: {{ errorMessage(error) }}</td>
+          </tr>
+          <tr v-for="r in data?.rows ?? []" :key="r.document_id">
+            <td class="mono">{{ r.invoice_number || "—" }}</td>
+            <td>{{ r.supplier || "—" }}</td>
+            <td>{{ r.invoice_date || "—" }}</td>
             <td class="num">{{ api.formatUGX(r.total) }}</td>
           </tr>
-          <tr v-if="!(data?.rows ?? []).length">
-            <td colspan="4" class="muted">No invoices above that amount.</td>
+          <tr v-if="!error && !(data?.rows ?? []).length">
+            <td colspan="4" class="muted">
+              <template v-if="data?.total">No invoices above that amount.</template>
+              <template v-else>No invoices yet — <NuxtLink to="/upload">scan one</NuxtLink>.</template>
+            </td>
           </tr>
         </tbody>
       </table>

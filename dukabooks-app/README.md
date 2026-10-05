@@ -33,8 +33,8 @@ Create `dukabooks-app/.env` (git ignores it) with:
 | `GPT_PLATFORM_APP_KEY` | App key; used only if the server key is empty |
 | `GPT_PLATFORM_APP_SERVER_KEY` | Server key the backend uses for every SDK call |
 | `GPT_PLATFORM_WORKSPACE_ID` | Workspace UUID the shop lives in (`npm run test:live` in `sdk-contract-tests/` lists them) |
-| `GPT_PLATFORM_AGENT_ID` | Optional: agent the Ask AI threads are bound to |
-| `GPT_PLATFORM_INVOICE_RESULT_ID` | Optional: extraction result the Dashboard/Invoices query |
+| `GPT_PLATFORM_SENDER_PROFILE_ID` | Optional: email "from" identity. If empty, the workspace's default sender profile is used |
+| `GPT_PLATFORM_AGENT_ID` | Optional: pin the Ask AI agent. If empty, the app finds the "DukaBooks Invoice Analyst" agent or creates it on first use |
 
 Without credentials the app starts, but every `/api` route returns
 `503 GPT Platform is not configured`.

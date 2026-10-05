@@ -75,13 +75,13 @@ Nuxt page
 
 | App route | SDK call |
 |---|---|
-| `GET /api/invoices?field&op&value` | `extraction.results.query(invoiceResultId, { filters })` |
+| `GET /api/invoices?field&op&value` | `extraction.documents.listByWorkspace` → `extraction.results.byDocument` per processed document, filtered on our server |
 | `POST /api/uploads` | `extraction.documents.beginUpload(attrs)` |
-| browser `PUT upload_url` | presigned storage upload (file never touches our server) |
+| `PUT /api/uploads/:id/file` | our server PUTs the file to the presigned `upload_url` (no storage CORS needed) |
 | `PATCH /api/uploads/:id/finish` | `extraction.documents.finishUpload(id)` |
 | `GET /api/uploads/:id` (polled) | `extraction.documents.status(id)` → `extraction.results.byDocument(id)` |
-| `POST /api/assistant/threads` | `threads.create({ title, agent_id })` |
-| `POST /api/assistant/threads/:id/messages` | `threads.messages.stream(id, { content })`, relayed as SSE |
+| `POST /api/assistant/threads` | finds/creates the "DukaBooks Invoice Analyst" agent (`agents.list` / `agents.create`), then `threads.create({ title, agent_id })` |
+| `POST /api/assistant/threads/:id/messages` | `threads.messages.stream(id, { content })` with the shop's extracted invoices attached as JSON, relayed as SSE |
 | `GET / POST /api/customers` | `crm.contacts.listByWorkspace` / `create` |
 | `PATCH /api/customers/:id/stage` | `crm.contacts.update(id, { lifecycle_stage })` |
 | `GET / POST /api/deals` | `crm.deals.listByWorkspace` / `create` |
@@ -99,7 +99,7 @@ Nuxt page
 Configuration (`dukabooks-app/.env`, not committed): `GPT_PLATFORM_BASE_URL`,
 `GPT_PLATFORM_APP_ID`, `GPT_PLATFORM_APP_KEY`, `GPT_PLATFORM_APP_SERVER_KEY`
 (used for the SDK calls), `GPT_PLATFORM_WORKSPACE_ID`, and optionally
-`GPT_PLATFORM_AGENT_ID` and `GPT_PLATFORM_INVOICE_RESULT_ID`. Without a key
+`GPT_PLATFORM_AGENT_ID` (otherwise the agent is found or created by name). Without a key
 every route answers `503 GPT Platform is not configured`. SDK errors are
 passed through with their status code and request id.
 

@@ -1,18 +1,17 @@
 <script setup>
 const api = useSmeApi();
+const { pageError, guard } = usePageErrors();
 
-const { data: services } = await useAsyncData("services", () => api.listServices());
+const { data: services, error: servicesErr } = await useAsyncData("services", () => api.listServices());
 
 const now = new Date();
 const todayStart = new Date(now); todayStart.setHours(0, 0, 0, 0);
 const weekEnd = new Date(todayStart); weekEnd.setDate(weekEnd.getDate() + 7);
 
-const { data: todays, refresh: refreshToday } = await useAsyncData(
-  "appointments-today",
+const { data: todays, refresh: refreshToday, error: todayErr } = await useAsyncData("appointments-today",
   () => api.listAppointmentsBetween(todayStart.toISOString(), new Date(now.getTime() + 86400000).toISOString())
 );
-const { data: upcoming, refresh: refreshUpcoming } = await useAsyncData(
-  "appointments-upcoming",
+const { data: upcoming, refresh: refreshUpcoming, error: upcomingErr } = await useAsyncData("appointments-upcoming",
   () => api.listAppointmentsBetween(new Date(now.getTime() + 86400000).toISOString(), weekEnd.toISOString())
 );
 
@@ -24,7 +23,7 @@ const acting = ref(null); // id of event being completed/cancelled
 const serviceName = (id) => services.value?.find((s) => s.id === id)?.name ?? "Meeting";
 const serviceDuration = (id) => services.value?.find((s) => s.id === id)?.duration_minutes ?? 30;
 
-async function book() {
+const book = guard(async () => {
   if (!form.value.title || !form.value.serviceId) return;
   saving.value = true;
   const start = new Date(`${form.value.date}T${form.value.time}:00`);
@@ -40,15 +39,15 @@ async function book() {
   await Promise.all([refreshToday(), refreshUpcoming()]);
   saving.value = false;
   showForm.value = false;
-}
+}, saving);
 
-async function act(id, verb) {
+const act = guard(async (id, verb) => {
   acting.value = id;
   // SDK (server side): client.scheduling.events.complete/cancel(id) (Test 019D)
   await (verb === "complete" ? api.completeAppointment(id) : api.cancelAppointment(id));
   await Promise.all([refreshToday(), refreshUpcoming()]);
   acting.value = null;
-}
+}, acting);
 
 const fmtTime = (iso) =>
   new Date(iso).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" });
@@ -66,6 +65,8 @@ const statusChip = (s) =>
       Bookings for you and your team
       <span class="mono">(scheduling.events, verified Test 019)</span>.
     </p>
+
+    <FeatureNotice feature="Scheduling" :errors="[servicesErr, todayErr, upcomingErr, pageError]" />
 
     <div class="card">
       <h2>Today · {{ fmtDay(todayStart.toISOString()) }}</h2>

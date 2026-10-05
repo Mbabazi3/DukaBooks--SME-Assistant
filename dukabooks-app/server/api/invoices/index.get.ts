@@ -1,13 +1,22 @@
-// Dashboard + Invoices: server-side row filtering over extracted invoices (Test 010).
+// Dashboard + Invoices: every processed document's extracted invoice, optionally
+// filtered (e.g. ?field=total&op=gt&value=2000000). Same shape as results.query.
+type Op = "gt" | "lt" | "eq" | "contains";
+
+const test = (row: any, field: string, op: Op, value: any) => {
+  const v = row[field];
+  switch (op) {
+    case "gt": return Number(v) > Number(value);
+    case "lt": return Number(v) < Number(value);
+    case "eq": return String(v) === String(value);
+    case "contains": return String(v ?? "").toLowerCase().includes(String(value).toLowerCase());
+    default: return true;
+  }
+};
+
 export default defineEventHandler(async (event) => {
-  const { field = "total", op = "gt", value = 0 } = getQuery(event);
-  const invoiceResultId = requireSetting(useGptConfig().invoiceResultId, "GPT_PLATFORM_INVOICE_RESULT_ID", "Invoice data");
-  const client = useGptClient();
-  return sdk(() =>
-    client.extraction.results.query(invoiceResultId, {
-      filters: [{ field: String(field), op: String(op), value: Number(value) }],
-      limit: 100,
-      offset: 0,
-    } as any)
-  );
+  const { field, op, value } = getQuery(event) as { field?: string; op?: Op; value?: string };
+  const all = await loadInvoices();
+  const rows = field && op && value !== undefined && value !== "" ? all.filter((r) => test(r, field, op, value)) : all;
+  rows.sort((a, b) => String(a.invoice_date ?? "").localeCompare(String(b.invoice_date ?? "")));
+  return { rows, total: all.length, filtered: rows.length };
 });
